@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Search Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        input, button { padding: 10px; margin: 10px 5px 10px 0; border-radius: 4px; border: 1px solid #ddd; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #results { margin-top: 20px; }
+        .result { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: white; }
+        .preview-text { color: #555; font-style: italic; font-size: 0.9em; margin: 10px 0; }
+       
+        /* Distinct style for the admin section */
+        .admin-box { margin-top: 00px; background: #f9f9f9; padding: 20px; border-top: 2px solid #ddd; border-bottom: 2px solid #ddd;}
+        /* Mobile-friendly adjustments */
+        .search-container { display: flex; flex-wrap: wrap; align-items: center; }
+        #search { flex: 1; min-width: 200px; }
+        button { min-width: 100px; } /* Ensures buttons are touch-friendly */
+        @media (max-width: 600px) {
+            body { max-width: 100%; margin: 20px auto; padding: 10px; }
+            input[type="text"], input[type="file"] { width: 100%; margin: 10px 0; }
+            button { width: 100%; margin: 10px 0; }
+            .search-container { flex-direction: column; }
+        }
+	.user-box { margin-top: 0px; background: #ffffff; padding: 20px; border-top: 0px solid #ddd; }
+        /* Mobile-friendly adjustments */
+        .search-container { display: flex; flex-wrap: wrap; align-items: center; }
+        #search { flex: 1; min-width: 200px; }
+        button { min-width: 100px; } /* Ensures buttons are touch-friendly */
+        @media (max-width: 600px) {
+            body { max-width: 100%; margin: 20px auto; padding: 10px; }
+            input[type="text"], input[type="file"] { width: 100%; margin: 10px 0; }
+            button { width: 100%; margin: 10px 0; }
+            .search-container { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+   
+    <!-- 1. SEARCH SECTION -->
+<div class="user-box">
+    <h2>Search Documents</h2>
+    <div class="search-container">
+        <input type="text" id="search" placeholder="Type to search...">
+        <button onclick="search()">Search</button>
+        <button onclick="refresh()">Refresh</button>
+    </div>
+    <div id="searchResults"></div>
+</div>
+    <!-- 3. UPLOAD SECTION (Admin) -->
+    <div class="admin-box">
+        <h2>Upload Documents (Admin)</h2>
+        <p><small>Requires credentials.</small></p>
+        <input type="file" id="files" multiple accept=".doc,.docx">
+        <button onclick="upload()">Upload Protected</button>
+        <div id="uploadStatus"></div>
+    </div>
+<div class="user-box">
+<!-- 2. LIST SECTION -->
+        <h2>List All Documents</h2>
+        <button onclick="listAll()">List All Documents</button>
+        <div id="listResults"></div>
+</div>
+    <script>
+    const API_BASE = 'https://absence-obvious-autumn-ipaq.trycloudflare.com';
+    
+    async function search() {
+        const query = document.getElementById('search').value;
+        const container = document.getElementById('searchResults');
+      
+        if (!query) {
+            alert('Please enter a search term!');
+            return;
+        }
+      
+        try {
+            // CORRECTED: Added '/documents' to the API path
+            const response = await fetch(`${API_BASE}/documents/search?q=${encodeURIComponent(query)}`);
+            const result = await response.json();
+          
+            container.innerHTML =
+                `<h3>Found ${result.count} matches for "${result.query}":</h3>` +
+                (result.results.length > 0
+                    ? result.results.map(r => `
+                        <div class="result">
+                            <strong>${r.filename}</strong>
+                            <p class="preview-text">"${r.snippet || 'No snippet available'}"</p>
+                            <small>Matches: ${r.matchCount} | Relevance: ${r.relevanceScore}</small>
+                        </div>
+                    `).join('')
+                    : '<p>No documents found matching your search.</p>'
+                );
+        } catch (error) {
+            container.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+        }
+    }
+    
+    // Unchanged as requested
+    function refresh() {
+        location.reload(); // This triggers a full page refresh
+    }
+
+    async function listAll() {
+        const container = document.getElementById('listResults');
+        try {
+            // CORRECTED: Added '/documents' to the API path
+            const response = await fetch(`${API_BASE}/documents/list`);
+            const result = await response.json();
+          
+            container.innerHTML =
+                `<h3>Total Documents: ${result.count}</h3>` +
+                (result.documents.length > 0
+                    ? result.documents.map(doc => `
+                        <div class="result">
+                            <strong>${doc.filename}</strong>
+                            <!-- PREVIEW TEXT HERE -->
+                            <p class="preview-text">${doc.preview || 'No content...'}</p>
+                            <small>Size: ${doc.contentLength} chars | Uploaded: ${new Date(doc.uploadedAt).toLocaleString()}</small>
+                        </div>
+                    `).join('')
+                    : '<p>No documents uploaded yet.</p>'
+                );
+        } catch (error) {
+            container.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+        }
+    }
+    async function upload() {
+        const filesInput = document.getElementById('files');
+        const files = filesInput.files;
+      
+        if (files.length === 0) {
+            alert('Please select files first!');
+            return;
+        }
+        // Request Credentials
+        const username = prompt("Please enter Admin Username:", "admin");
+        if (username === null) return;
+        const password = prompt("Please enter Admin Password:");
+        if (password === null) return;
+        if (!username || !password) {
+            alert("Username and Password are required to upload.");
+            return;
+        }
+      
+        const formData = new FormData();
+        for(let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+        }
+      
+        try {
+            document.getElementById('uploadStatus').innerHTML = 'Uploading...';
+          
+            const authString = btoa(`${username}:${password}`);
+            // CORRECTED: Added '/documents' to the API path
+            const response = await fetch(`${API_BASE}/documents/upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Basic ${authString}`
+                },
+                body: formData
+            });
+          
+            if (response.status === 401) {
+                throw new Error("Authentication Failed: Invalid username or password.");
+            }
+            const result = await response.json();
+          
+            if (!response.ok) {
+                throw new Error(result.message || 'Upload failed');
+            }
+            document.getElementById('uploadStatus').innerHTML =
+                `<div style="color: green;">Uploaded successfully: ${result.count} documents</div>`;
+          
+            filesInput.value = '';
+            // Refresh list automatically
+            listAll();
+        } catch (error) {
+            console.error('Upload error:', error);
+            document.getElementById('uploadStatus').innerHTML =
+                `<div style="color: red;">Error: ${error.message}</div>`;
+        }
+    }
+    document.getElementById('search').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') search();
+    });
+</script>
+</body>
+</html>
