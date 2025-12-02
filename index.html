@@ -1,190 +1,775 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Document Search Test</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocSearch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
-        input, button { padding: 10px; margin: 10px 5px 10px 0; border-radius: 4px; border: 1px solid #ddd; }
-        button { background: #007bff; color: white; border: none; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        #results { margin-top: 20px; }
-        .result { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: white; }
-        .preview-text { color: #555; font-style: italic; font-size: 0.9em; margin: 10px 0; }
-       
-        /* Distinct style for the admin section */
-        .admin-box { margin-top: 00px; background: #f9f9f9; padding: 20px; border-top: 2px solid #ddd; border-bottom: 2px solid #ddd;}
-        /* Mobile-friendly adjustments */
-        .search-container { display: flex; flex-wrap: wrap; align-items: center; }
-        #search { flex: 1; min-width: 200px; }
-        button { min-width: 100px; } /* Ensures buttons are touch-friendly */
-        @media (max-width: 600px) {
-            body { max-width: 100%; margin: 20px auto; padding: 10px; }
-            input[type="text"], input[type="file"] { width: 100%; margin: 10px 0; }
-            button { width: 100%; margin: 10px 0; }
-            .search-container { flex-direction: column; }
+        :root {
+            /* Gemini / Material 3 Dark Palette */
+            --bg-body: #131314;
+            --bg-surface: #1e1f20;
+            --bg-surface-hover: #333537;
+            --bg-input: #1e1f20;
+            
+            --text-primary: #e3e3e3;
+            --text-secondary: #c4c7c5;
+            --text-tertiary: #8e918f;
+
+            --accent-color: #a8c7fa; 
+            --accent-dim: rgba(168, 199, 250, 0.1);
+            --accent-gradient: linear-gradient(90deg, #4285f4, #d96570);
+
+            --radius-pill: 999px;
+            --radius-card: 16px;
         }
-	.user-box { margin-top: 0px; background: #ffffff; padding: 20px; border-top: 0px solid #ddd; }
-        /* Mobile-friendly adjustments */
-        .search-container { display: flex; flex-wrap: wrap; align-items: center; }
-        #search { flex: 1; min-width: 200px; }
-        button { min-width: 100px; } /* Ensures buttons are touch-friendly */
-        @media (max-width: 600px) {
-            body { max-width: 100%; margin: 20px auto; padding: 10px; }
-            input[type="text"], input[type="file"] { width: 100%; margin: 10px 0; }
-            button { width: 100%; margin: 10px 0; }
-            .search-container { flex-direction: column; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
         }
+
+        /* --- Main Content Area --- */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+
+        /* Top Bar */
+        .search-header {
+            padding: 20px 40px;
+            background-color: var(--bg-body); 
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Mobile Responsive Design */
+        @media (max-width: 768px) {
+            .search-header {
+                padding: 15px 20px;
+            }
+            
+            .search-wrapper {
+                max-width: 100%;
+            }
+            
+            .content-scroll {
+                padding: 15px 20px;
+            }
+            
+            .gradient-text {
+                font-size: 28px;
+            }
+            
+            .sub-text {
+                font-size: 14px;
+                padding: 0 10px;
+            }
+            
+            .result-card {
+                padding: 18px;
+            }
+            
+            .result-header {
+                flex-wrap: wrap;
+            }
+            
+            .result-filename {
+                font-size: 14px;
+                width: 100%;
+                margin-bottom: 8px;
+            }
+        }
+
+        .search-wrapper {
+            width: 100%;
+            max-width: 760px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-input);
+            border-radius: var(--radius-pill);
+            padding: 4px 8px;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .search-wrapper:focus-within {
+            background-color: #282a2c;
+            box-shadow: 0 0 0 1px var(--text-secondary);
+        }
+
+        .search-icon {
+            padding: 10px 12px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            padding: 12px 0;
+            font-size: 16px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .search-input::placeholder { color: var(--text-tertiary); }
+
+        /* Content Scroll */
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 40px;
+        }
+
+        .results-wrapper {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-top: 60px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .gradient-text {
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 36px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .sub-text {
+            color: var(--text-secondary);
+            font-size: 16px;
+            max-width: 450px;
+            line-height: 1.6;
+        }
+
+        /* Output Area */
+        .output-area { display: none; }
+
+        /* Result Cards */
+        .result-card {
+            background-color: var(--bg-surface);
+            border-radius: var(--radius-card);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+
+        .result-icon {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background-color: var(--bg-body);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-color);
+        }
+
+        .result-filename {
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 15px;
+            flex: 1;
+        }
+
+        .download-pill {
+            text-decoration: none;
+            font-size: 12px;
+            color: var(--accent-color);
+            background: var(--accent-dim);
+            padding: 6px 16px;
+            border-radius: var(--radius-pill);
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .download-pill:hover { background: rgba(168, 199, 250, 0.2); }
+
+        .result-snippet {
+            color: var(--text-secondary);
+            font-size: 15px;
+            line-height: 1.6;
+            background: rgba(0,0,0,0.2);
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .highlight {
+            color: var(--bg-body);
+            background-color: var(--accent-color);
+            padding: 0px 1px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .panel-header { margin-bottom: 20px; }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-btn {
+            width: 100%;
+            background-color: #282a2c;
+            color: var(--accent-color);
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-pill);
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .upload-btn:hover { background-color: #333537; }
+
+        .file-grid {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 5px;
+        }
+
+        .doc-tile {
+            background-color: var(--bg-body);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .doc-tile:hover { background-color: #282a2c; }
+
+        .doc-icon { color: var(--accent-color); }
+
+        .doc-info {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .doc-name {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .doc-meta { font-size: 11px; color: var(--text-tertiary); }
+
+        /* Auth Modal */
+        .auth-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .auth-modal.open { display: flex; }
+
+        .auth-card {
+            background: var(--bg-surface);
+            padding: 32px;
+            border-radius: 24px;
+            width: 320px;
+            border: 1px solid var(--bg-surface-hover);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .auth-input {
+            width: 100%;
+            background: var(--bg-body);
+            border: 1px solid var(--bg-surface-hover);
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        .auth-input:focus { border-color: var(--accent-color); }
+
+        .login-btn {
+            width: 100%;
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-pill);
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .cancel-btn {
+            width: 100%;
+            background: transparent;
+            color: var(--text-tertiary);
+            border: none;
+            padding: 12px;
+            margin-top: 5px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        /* Drag Overlay */
+        .drag-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(19, 19, 20, 0.95);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: var(--accent-color);
+        }
+        .drag-overlay.active { display: flex; }
+
+        .hidden-input { display: none; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Loader */
+        .loader-line {
+            height: 3px; width: 100%; background: #333537; overflow: hidden; border-radius: 2px; margin-bottom: 20px;
+        }
+        .loader-line::before {
+            content: ''; display: block; width: 40%; height: 100%; background: var(--accent-color); animation: moving 1s infinite ease-in-out;
+        }
+        @keyframes moving { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #444746; border-radius: 3px; }
     </style>
 </head>
 <body>
-   
-    <!-- 1. SEARCH SECTION -->
-<div class="user-box">
-    <h2>Search Documents</h2>
-    <div class="search-container">
-        <input type="text" id="search" placeholder="Type to search...">
-        <button onclick="search()">Search</button>
-        <button onclick="refresh()">Refresh</button>
-    </div>
-    <div id="searchResults"></div>
-</div>
-    <!-- 3. UPLOAD SECTION (Admin) -->
-    <div class="admin-box">
-        <h2>Upload Documents (Admin)</h2>
-        <p><small>Requires credentials.</small></p>
-        <input type="file" id="files" multiple accept=".doc,.docx">
-        <button onclick="upload()">Upload Protected</button>
-        <div id="uploadStatus"></div>
-    </div>
-<div class="user-box">
-<!-- 2. LIST SECTION -->
-        <h2>List All Documents</h2>
-        <button onclick="listAll()">List All Documents</button>
-        <div id="listResults"></div>
-</div>
-    <script>
-    const API_BASE = 'https://absence-obvious-autumn-ipaq.trycloudflare.com';
-    
-    async function search() {
-        const query = document.getElementById('search').value;
-        const container = document.getElementById('searchResults');
-      
-        if (!query) {
-            alert('Please enter a search term!');
-            return;
-        }
-      
-        try {
-            // CORRECTED: Added '/documents' to the API path
-            const response = await fetch(`${API_BASE}/documents/search?q=${encodeURIComponent(query)}`);
-            const result = await response.json();
-          
-            container.innerHTML =
-                `<h3>Found ${result.count} matches for "${result.query}":</h3>` +
-                (result.results.length > 0
-                    ? result.results.map(r => `
-                        <div class="result">
-                            <strong>${r.filename}</strong>
-                            <p class="preview-text">"${r.snippet || 'No snippet available'}"</p>
-                            <small>Matches: ${r.matchCount} | Relevance: ${r.relevanceScore}</small>
-                        </div>
-                    `).join('')
-                    : '<p>No documents found matching your search.</p>'
-                );
-        } catch (error) {
-            container.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
-        }
-    }
-    
-    // Unchanged as requested
-    function refresh() {
-        location.reload(); // This triggers a full page refresh
-    }
 
-    async function listAll() {
-        const container = document.getElementById('listResults');
-        try {
-            // CORRECTED: Added '/documents' to the API path
-            const response = await fetch(`${API_BASE}/documents/list`);
-            const result = await response.json();
-          
-            container.innerHTML =
-                `<h3>Total Documents: ${result.count}</h3>` +
-                (result.documents.length > 0
-                    ? result.documents.map(doc => `
-                        <div class="result">
-                            <strong>${doc.filename}</strong>
-                            <!-- PREVIEW TEXT HERE -->
-                            <p class="preview-text">${doc.preview || 'No content...'}</p>
-                            <small>Size: ${doc.contentLength} chars | Uploaded: ${new Date(doc.uploadedAt).toLocaleString()}</small>
-                        </div>
-                    `).join('')
-                    : '<p>No documents uploaded yet.</p>'
-                );
-        } catch (error) {
-            container.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+    <div class="main-area">
+        <!-- Search Header -->
+        <div class="search-header">
+            <div class="search-wrapper">
+                <div class="search-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+                <input type="text" id="searchBox" class="search-input" placeholder="Type some initial sinhala words to search in the database..." autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-scroll">
+            <div class="results-wrapper">
+                
+                <!-- Empty State -->
+                <div id="emptyState" class="empty-state">
+                    <div class="gradient-text">Hello</div>
+                    <div class="sub-text">
+                        I am ready to search the document library. Enter sinhala text above.
+                        <!-- <br><br>
+                        <span style="font-size: 12px; color: #555;">(Admin login required to manage files)</span> -->
+                    </div>
+                </div>
+
+                <!-- Output Area -->
+                <div id="outputArea" class="output-area"></div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Drag Overlay -->
+    <div id="dragOverlay" class="drag-overlay">
+        <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        <h2 style="margin-top: 20px; font-weight: 400;">Drop .docx files here</h2>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://20.195.43.126:3000';
+        let authToken = '';
+        let isAdminLoggedIn = false;
+        let searchTimeout;
+
+        // --- Auth & Toggle Logic ---
+        function openLoginModal() {
+            if(isAdminLoggedIn) {
+                // Logout Logic
+                isAdminLoggedIn = false;
+                authToken = '';
+                document.getElementById('rightPanel').classList.remove('active');
+                document.getElementById('adminBtn').innerText = "Admin Login";
+                document.getElementById('adminBtn').classList.remove('active');
+                document.getElementById('fileList').innerHTML = '';
+            } else {
+                // Open the modal
+                document.getElementById('authModal').classList.add('open');
+                document.getElementById('loginError').style.display = 'none';
+                // Focus username field after a brief delay to ensure modal is visible
+                setTimeout(() => {
+                    document.getElementById('usernameInput').focus();
+                }, 100);
+            }
         }
-    }
-    async function upload() {
-        const filesInput = document.getElementById('files');
-        const files = filesInput.files;
-      
-        if (files.length === 0) {
-            alert('Please select files first!');
-            return;
+
+        function closeLoginModal() {
+            document.getElementById('authModal').classList.remove('open');
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('usernameInput').value = '';
+            document.getElementById('passwordInput').value = '';
         }
-        // Request Credentials
-        const username = prompt("Please enter Admin Username:", "admin");
-        if (username === null) return;
-        const password = prompt("Please enter Admin Password:");
-        if (password === null) return;
-        if (!username || !password) {
-            alert("Username and Password are required to upload.");
-            return;
+
+        async function attemptLogin() {
+            const u = document.getElementById('usernameInput').value;
+            const p = document.getElementById('passwordInput').value;
+
+            if(!u || !p) {
+                document.getElementById('loginError').style.display = 'block';
+                document.getElementById('loginError').innerText = 'Please enter both username and password';
+                return;
+            }
+
+            // Show loading state
+            const loginBtn = document.querySelector('.login-btn');
+            const originalText = loginBtn.innerText;
+            loginBtn.innerText = 'Signing in...';
+            loginBtn.disabled = true;
+            document.getElementById('loginError').style.display = 'none';
+
+            try {
+                // Verify credentials with server
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    isAdminLoggedIn = true;
+                    authToken = data.token || btoa(`${u}:${p}`);
+                    
+                    // UI Updates
+                    closeLoginModal();
+                    document.getElementById('rightPanel').classList.add('active');
+                    document.getElementById('adminBtn').innerText = "Sign Out";
+                    document.getElementById('adminBtn').classList.add('active');
+                    
+                    // Load Data
+                    loadDocuments();
+                } else {
+                    // Show error
+                    document.getElementById('loginError').style.display = 'block';
+                    document.getElementById('loginError').innerText = 'Invalid username or password';
+                }
+            } catch (error) {
+                // Network or server error - fallback to client-side check for demo
+                console.log('Server auth unavailable, using fallback');
+                
+                // TEMPORARY: Client-side check (remove when backend is ready)
+                if(u === 'admin' && p === 'password') {
+                    isAdminLoggedIn = true;
+                    authToken = btoa(`${u}:${p}`);
+                    
+                    closeLoginModal();
+                    document.getElementById('rightPanel').classList.add('active');
+                    document.getElementById('adminBtn').innerText = "Sign Out";
+                    document.getElementById('adminBtn').classList.add('active');
+                    
+                    loadDocuments();
+                } else {
+                    document.getElementById('loginError').style.display = 'block';
+                    document.getElementById('loginError').innerText = 'Invalid credentials';
+                }
+            } finally {
+                // Reset button state
+                loginBtn.innerText = originalText;
+                loginBtn.disabled = false;
+            }
         }
-      
-        const formData = new FormData();
-        for(let i = 0; i < files.length; i++) {
-            formData.append('files', files[i]);
-        }
-      
-        try {
-            document.getElementById('uploadStatus').innerHTML = 'Uploading...';
-          
-            const authString = btoa(`${username}:${password}`);
-            // CORRECTED: Added '/documents' to the API path
-            const response = await fetch(`${API_BASE}/documents/upload`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Basic ${authString}`
-                },
-                body: formData
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setupSearch();
+            setupFileUpload();
+            setupDragAndDrop();
+            
+            // Enter key support for login
+            document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    attemptLogin();
+                }
             });
-          
-            if (response.status === 401) {
-                throw new Error("Authentication Failed: Invalid username or password.");
-            }
-            const result = await response.json();
-          
-            if (!response.ok) {
-                throw new Error(result.message || 'Upload failed');
-            }
-            document.getElementById('uploadStatus').innerHTML =
-                `<div style="color: green;">Uploaded successfully: ${result.count} documents</div>`;
-          
-            filesInput.value = '';
-            // Refresh list automatically
-            listAll();
-        } catch (error) {
-            console.error('Upload error:', error);
-            document.getElementById('uploadStatus').innerHTML =
-                `<div style="color: red;">Error: ${error.message}</div>`;
+            
+            document.getElementById('usernameInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('passwordInput').focus();
+                }
+            });
+        });
+
+        // --- 1. Search Logic ---
+        function setupSearch() {
+            const searchBox = document.getElementById('searchBox');
+            const emptyState = document.getElementById('emptyState');
+            const outputArea = document.getElementById('outputArea');
+
+            const performSearch = () => {
+                const query = searchBox.value.trim();
+
+                if (!query) {
+                    emptyState.style.display = 'flex';
+                    outputArea.style.display = 'none';
+                    outputArea.innerHTML = ''; 
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                outputArea.style.display = 'block';
+                outputArea.innerHTML = `
+                    <div style="max-width: 600px; margin: 0 auto; padding-top: 20px;">
+                        <div class="loader-line"></div>
+                        <div style="text-align:center; color:var(--text-secondary); font-size:14px;">Searching...</div>
+                    </div>
+                `;
+
+                fetch(`${API_BASE_URL}/documents/search?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
+                    .then(data => renderSearchResults(data.results, query))
+                    .catch(err => {
+                        outputArea.innerHTML = `<div style="color: #d96570; text-align: center; padding-top: 20px;">Search failed: ${err.message}</div>`;
+                    });
+            };
+
+            searchBox.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(performSearch, 500);
+            });
+
+            searchBox.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    clearTimeout(searchTimeout);
+                    performSearch();
+                }
+            });
         }
-    }
-    document.getElementById('search').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') search();
-    });
-</script>
+
+        function renderSearchResults(results, query) {
+            const container = document.getElementById('outputArea');
+            
+            if (!results || results.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding-top: 40px; color: var(--text-secondary);">
+                        <p>No matches found for "<strong>${escapeHtml(query)}</strong>"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const header = `<div style="margin-bottom: 20px; color: var(--text-secondary); font-size: 14px;">${results.length} results found</div>`;
+
+            const cards = results.map(result => {
+                const safeSnippet = escapeHtml(result.snippet);
+                const highlighted = safeSnippet.replace(
+                    new RegExp(escapeRegExp(query), 'gi'), 
+                    match => `<span class="highlight">${match}</span>`
+                );
+
+                return `
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="result-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6z"/></svg>
+                        </div>
+                        <div class="result-filename">${escapeHtml(result.filename)}</div>
+                        <a href="${API_BASE_URL}/documents/download/${encodeURIComponent(result.filename)}" class="download-pill">Download</a>
+                    </div>
+                    <div class="result-snippet">...${highlighted}...</div>
+                </div>
+                `;
+            }).join('');
+
+            container.innerHTML = header + cards;
+        }
+
+        // --- 2. Document Library ---
+        async function loadDocuments() {
+            if(!isAdminLoggedIn) return;
+            
+            const listContainer = document.getElementById('fileList');
+            listContainer.innerHTML = '<div style="color:var(--text-tertiary); font-size:12px; padding:10px;">Loading...</div>';
+            try {
+                const response = await fetch(`${API_BASE_URL}/documents/list`);
+                const data = await response.json();
+                renderSidebar(data.documents);
+            } catch (error) {
+                listContainer.innerHTML = '<div style="color: #d96570; font-size: 12px;">Offline</div>';
+            }
+        }
+
+        function renderSidebar(documents) {
+            const listContainer = document.getElementById('fileList');
+            if (!documents || documents.length === 0) {
+                listContainer.innerHTML = `<div style="text-align:center; color:var(--text-tertiary); padding:20px 0; font-size:13px;">Empty library</div>`;
+                return;
+            }
+            listContainer.innerHTML = documents.map(doc => `
+                <a href="${API_BASE_URL}/documents/download/${encodeURIComponent(doc.filename)}" class="doc-tile" title="${doc.filename}">
+                    <div class="doc-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+                    </div>
+                    <div class="doc-info">
+                        <div class="doc-name">${escapeHtml(doc.filename)}</div>
+                        <div class="doc-meta">DOCX</div>
+                    </div>
+                </a>
+            `).join('');
+        }
+
+        // --- 3. Upload Logic ---
+        function setupFileUpload() {
+            document.getElementById('fileInput').addEventListener('change', (e) => {
+                if(e.target.files.length) executeUpload(Array.from(e.target.files));
+            });
+        }
+
+        function setupDragAndDrop() {
+            const overlay = document.getElementById('dragOverlay');
+            
+            window.addEventListener('dragover', (e) => { 
+                e.preventDefault();
+                if(isAdminLoggedIn) overlay.classList.add('active'); 
+            });
+
+            window.addEventListener('dragleave', (e) => { 
+                if(e.relatedTarget === null) overlay.classList.remove('active'); 
+            });
+
+            window.addEventListener('drop', (e) => {
+                e.preventDefault(); 
+                overlay.classList.remove('active');
+                
+                if(!isAdminLoggedIn) return;
+
+                const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.docx') || f.type.includes('wordprocessing'));
+                if(files.length) executeUpload(files);
+            });
+        }
+
+        async function executeUpload(files) {
+            if (!isAdminLoggedIn) return;
+
+            const emptyState = document.getElementById('emptyState');
+            const outputArea = document.getElementById('outputArea');
+            
+            emptyState.style.display = 'none';
+            outputArea.style.display = 'block';
+            outputArea.innerHTML = `
+                <div style="max-width: 600px; margin: 0 auto; padding-top: 40px; text-align: center;">
+                    <div class="loader-line"></div>
+                    <div style="color: var(--text-primary); margin-bottom:5px;">Uploading ${files.length} file(s)...</div>
+                </div>
+            `;
+
+            const formData = new FormData();
+            files.forEach(f => formData.append('files', f));
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/documents/upload`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Basic ${authToken}` },
+                    body: formData
+                });
+                if (res.ok) {
+                    await loadDocuments();
+                    outputArea.innerHTML = `
+                        <div style="text-align: center; padding-top: 40px;">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#a8c7fa" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            <h3 style="margin-top: 15px; color: var(--text-primary);">Upload Complete</h3>
+                        </div>
+                    `;
+                    setTimeout(() => {
+                        if(!document.getElementById('searchBox').value) {
+                            outputArea.style.display = 'none';
+                            emptyState.style.display = 'flex';
+                        }
+                    }, 2000);
+                } else throw new Error("Failed");
+            } catch (err) {
+                outputArea.innerHTML = `<div style="color: #d96570; text-align: center; padding-top: 40px;">Upload failed.</div>`;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+    </script>
 </body>
 </html>

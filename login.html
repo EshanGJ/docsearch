@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - DocSearch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #131314;
+            --bg-surface: #1e1f20;
+            --bg-input: #28292a;
+            --text-primary: #e3e3e3;
+            --text-secondary: #c4c7c5;
+            --accent-color: #a8c7fa;
+            --radius-card: 16px;
+            --radius-pill: 999px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-body);
+            background: radial-gradient(circle at center, #1e1f20 0%, #131314 70%);
+            color: var(--text-primary);
+            height: 100vh;
+            width: 100%;
+            
+            /* --- CENTER THE CARD --- */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--bg-surface);
+            padding: 40px;
+            border-radius: var(--radius-card);
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 32px;
+            background: linear-gradient(90deg, #4285f4, #d96570);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-group { 
+            margin-bottom: 20px; 
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus { border-color: var(--accent-color); }
+
+        .login-btn {
+            width: 100%;
+            background: var(--accent-color);
+            color: var(--bg-body);
+            border: none;
+            padding: 14px;
+            border-radius: var(--radius-pill);
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+
+        .login-btn:hover { 
+            opacity: 0.9; 
+            transform: translateY(-1px);
+        }
+        
+        .login-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            color: #d96570;
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo">DocSearch Admin</div>
+        <form id="loginForm">
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="username" placeholder="Enter username" required>
+            </div>
+            
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="Enter password" required>
+            </div>
+
+            <button type="submit" class="login-btn" id="submitBtn">Sign In</button>
+            <div class="error-msg" id="errorMsg">Invalid credentials</div>
+        </form>
+    </div>
+
+    <script>
+        // Define your backend URL here
+        const API_BASE_URL = 'http://20.195.43.126:3000';
+
+        // Check if already logged in
+        if (localStorage.getItem('docubrain_auth_token')) {
+            window.location.href = 'admin.html';
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+            const submitBtn = document.getElementById('submitBtn');
+
+            // 1. Create Basic Auth Token
+            // btoa() encodes string to Base64
+            const token = btoa(`${user}:${pass}`);
+
+            // 2. Disable button while checking
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Verifying...";
+            errorMsg.style.display = 'none';
+
+            try {
+                // 3. Call the Verify Endpoint
+                const response = await fetch(`${API_BASE_URL}/documents/auth/verify`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Basic ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    // 4. Success: Save token and redirect
+                    localStorage.setItem('docubrain_auth_token', token);
+                    localStorage.setItem('docubrain_user', user);
+                    window.location.href = 'admin.html';
+                } else {
+                    // 5. Fail: Show error
+                    throw new Error('Unauthorized');
+                }
+            } catch (error) {
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = "Invalid username or password";
+                
+                const card = document.querySelector('.login-card');
+                card.animate([
+                    { transform: 'translateX(0)' },
+                    { transform: 'translateX(-10px)' },
+                    { transform: 'translateX(10px)' },
+                    { transform: 'translateX(0)' }
+                ], { duration: 300 });
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Sign In";
+            }
+        });
+    </script>
+</body>
+</html>
