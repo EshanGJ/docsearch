@@ -658,44 +658,40 @@
                 statusDiv.innerHTML = `<div class="loader-line"></div><div style="text-align:center">Uploading...</div>`;
             
                 const formData = new FormData();
-                files.forEach(f => formData.append('files', f)); // Must match @UploadedFiles() field name
+                
+                // FIX 1: Ensure the field name matches what NestJS's @UseInterceptors(FilesInterceptor('files')) expects.
+                // If your backend uses FilesInterceptor('files'), keep it as 'files'.
+                // If your backend uses FileInterceptor('file'), change this to 'file'.
+                files.forEach(f => formData.append('files', f)); 
             
                 try {
                     const res = await fetch(`${API_BASE_URL}/documents/upload`, {
                         method: 'POST',
-                        headers: {
-                            'Authorization': `Basic ${authToken}`
-                            // DO NOT set Content-Type — let browser do it!
+                        headers: { 
+                            // FIX 2: Change 'Basic' to 'Bearer' (Standard for JWTs)
+                            'Authorization': `Bearer ${authToken}` 
+                            // NOTE: Do NOT add 'Content-Type': 'multipart/form-data' here. 
+                            // The browser sets it automatically with the boundary.
                         },
                         body: formData
                     });
             
-                    if (res.status === 401) {
-                        alert("Session expired");
-                        handleLogout();
-                        return;
+                    if (res.ok) {
+                        statusDiv.innerHTML = `<div style="text-align:center;color:#4caf50">✓ Uploaded</div>`;
+                        const current = parseInt(document.getElementById('uploadCount').textContent) || 0;
+                        document.getElementById('uploadCount').textContent = current + files.length;
+                        await loadDocuments();
+                        setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
+                    } else {
+                        // Get the actual error message from the backend to debug further
+                        const errorData = await res.json();
+                        console.error("Upload failed:", errorData);
+                        throw new Error(errorData.message || 'Failed');
                     }
-            
-                    if (!res.ok) {
-                        const errText = await res.text();
-                        console.error("Upload error response:", errText);
-                        throw new Error(`Failed to upload: ${res.status}`);
-                    }
-            
-                    const result = await res.json();
-                    statusDiv.innerHTML = `<div style="text-align:center;color:#4caf50">✓ Uploaded (${result.count} files)</div>`;
-                    
-                    const current = parseInt(document.getElementById('uploadCount').textContent) || 0;
-                    document.getElementById('uploadCount').textContent = current + result.count;
-            
-                    await loadDocuments();
-                    setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
-            
                 } catch (error) {
-                    console.error("Upload failed:", error);
-                    statusDiv.innerHTML = `<div style="text-align:center;color:#d96570">✗ Upload failed</div>`;
+                    console.error(error);
+                    statusDiv.innerHTML = `<div style="text-align:center;color:#d96570">✗ Failed: ${error.message}</div>`;
                 }
-            
                 document.getElementById('fileInput').value = '';
             }
 
@@ -733,5 +729,6 @@
 </body>
 
 </html>
+
 
 
