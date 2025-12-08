@@ -658,12 +658,16 @@
                 statusDiv.innerHTML = `<div class="loader-line"></div><div style="text-align:center">Uploading...</div>`;
 
                 const formData = new FormData();
+                // THIS KEY MUST BE 'files'
                 files.forEach(f => formData.append('files', f));
 
                 try {
                     const res = await fetch(`${API_BASE_URL}/documents/upload`, {
                         method: 'POST',
-                        headers: { 'Authorization': `Basic ${authToken}` },
+                        headers: { 
+                            // DO NOT USE 'Bearer'. Your backend specifically checks for 'Basic'.
+                            'Authorization': `Basic ${authToken}` 
+                        },
                         body: formData
                     });
 
@@ -674,7 +678,10 @@
                         await loadDocuments();
                         setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
                     } else {
-                        throw new Error('Failed');
+                        // Log the actual error from backend
+                        const errData = await res.json(); 
+                        console.error("Backend Error:", errData);
+                        throw new Error(errData.message || 'Failed');
                     }
                 } catch (error) {
                     statusDiv.innerHTML = `<div style="text-align:center;color:#d96570">✗ Failed</div>`;
@@ -716,6 +723,7 @@
 </body>
 
 </html>
+
 
 
 
