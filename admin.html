@@ -656,24 +656,17 @@
                 const statusDiv = document.getElementById('uploadStatus');
                 statusDiv.style.display = 'block';
                 statusDiv.innerHTML = `<div class="loader-line"></div><div style="text-align:center">Uploading...</div>`;
-            
+
                 const formData = new FormData();
-                
-                // IMPORTANT: This key 'files' must match the first argument in 
-                // FilesInterceptor('files') on the backend.
                 files.forEach(f => formData.append('files', f));
-            
+
                 try {
                     const res = await fetch(`${API_BASE_URL}/documents/upload`, {
                         method: 'POST',
-                        headers: { 
-                            // IMPORTANT: Your Backend Guard explicitly checks for 'Basic', 
-                            // so we must use Basic here.
-                            'Authorization': `Basic ${authToken}` 
-                        },
+                        headers: { 'Authorization': `Basic ${authToken}` },
                         body: formData
                     });
-            
+
                     if (res.ok) {
                         statusDiv.innerHTML = `<div style="text-align:center;color:#4caf50">✓ Uploaded</div>`;
                         const current = parseInt(document.getElementById('uploadCount').textContent) || 0;
@@ -681,15 +674,14 @@
                         await loadDocuments();
                         setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
                     } else {
-                        const err = await res.json();
-                        throw new Error(err.message || 'Upload failed');
+                        throw new Error('Failed');
                     }
                 } catch (error) {
-                    console.error(error);
-                    statusDiv.innerHTML = `<div style="text-align:center;color:#d96570">✗ ${error.message}</div>`;
+                    statusDiv.innerHTML = `<div style="text-align:center;color:#d96570">✗ Failed</div>`;
                 }
                 document.getElementById('fileInput').value = '';
             }
+            
             // --- Helpers ---
             function togglePublicAccess() {
                 const toggle = document.getElementById('publicAccessToggle');
@@ -724,6 +716,7 @@
 </body>
 
 </html>
+
 
 
 
