@@ -659,19 +659,17 @@
             
                 const formData = new FormData();
                 
-                // FIX 1: Ensure the field name matches what NestJS's @UseInterceptors(FilesInterceptor('files')) expects.
-                // If your backend uses FilesInterceptor('files'), keep it as 'files'.
-                // If your backend uses FileInterceptor('file'), change this to 'file'.
-                files.forEach(f => formData.append('files', f)); 
+                // IMPORTANT: This key 'files' must match the first argument in 
+                // FilesInterceptor('files') on the backend.
+                files.forEach(f => formData.append('files', f));
             
                 try {
                     const res = await fetch(`${API_BASE_URL}/documents/upload`, {
                         method: 'POST',
                         headers: { 
-                            // FIX 2: Change 'Basic' to 'Bearer' (Standard for JWTs)
-                            'Authorization': `Bearer ${authToken}` 
-                            // NOTE: Do NOT add 'Content-Type': 'multipart/form-data' here. 
-                            // The browser sets it automatically with the boundary.
+                            // IMPORTANT: Your Backend Guard explicitly checks for 'Basic', 
+                            // so we must use Basic here.
+                            'Authorization': `Basic ${authToken}` 
                         },
                         body: formData
                     });
@@ -683,18 +681,15 @@
                         await loadDocuments();
                         setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
                     } else {
-                        // Get the actual error message from the backend to debug further
-                        const errorData = await res.json();
-                        console.error("Upload failed:", errorData);
-                        throw new Error(errorData.message || 'Failed');
+                        const err = await res.json();
+                        throw new Error(err.message || 'Upload failed');
                     }
                 } catch (error) {
                     console.error(error);
-                    statusDiv.innerHTML = `<div style="text-align:center;color:#d96570">✗ Failed: ${error.message}</div>`;
+                    statusDiv.innerHTML = `<div style="text-align:center;color:#d96570">✗ ${error.message}</div>`;
                 }
                 document.getElementById('fileInput').value = '';
             }
-
             // --- Helpers ---
             function togglePublicAccess() {
                 const toggle = document.getElementById('publicAccessToggle');
@@ -729,6 +724,7 @@
 </body>
 
 </html>
+
 
 
 
